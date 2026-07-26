@@ -60,46 +60,11 @@ begin
   Result := FileExists(ExpandConstant('{sys}\WindowsPowerShell\v1.0\PowerShell.exe'));
 end;
 
-// Add app directory to User PATH
-procedure CurStepChanged(CurStep: TSetupStep);
-var
-  PathEntry: String;
-  CurrentPath: String;
-  RegKey: Integer;
-begin
-  if CurStep = ssPostInstall then
-  begin
-    PathEntry := ExpandConstant('{app}');
-
-    // Read current PATH using native Pascal string handling
-    RegKey := 0;
-    CurrentPath := '';
-    if RegOpenKeyEx(HKEY_CURRENT_USER, 'Environment', 0, KEY_READ, RegKey) then
-    begin
-      CurrentPath := StringOfChar(' ', 32768);
-      if RegQueryStringValue(RegKey, 'Path', CurrentPath) then
-      begin
-        // Trim null padding
-        CurrentPath := Trim(CurrentPath);
-      end
-      else
-        CurrentPath := '';
-      RegCloseKey(RegKey);
-    end;
-
-    if Pos(PathEntry, CurrentPath) = 0 then
-    begin
-      RegWriteStringValue(HKEY_CURRENT_USER, 'Environment', 'Path', CurrentPath + ';' + PathEntry);
-      SendMessage(HWND_BROADCAST, WM_SETTINGCHANGE, 0, 'Environment');
-    end;
-  end;
-end;
-
 procedure InitializeWizard;
 begin
-  if not IsPowerShellInstalled then
-  begin
-    MsgBox('PowerShell 5.1 non trovato. Assicurati che Windows sia aggiornato.', mbInformation, MB_OK);
-  end;
-end;
+  // PATH is not auto-added. After install, run in PowerShell:
+  // [Environment]::SetEnvironmentVariable("Path", $env:Path + ";{app}", "User")
+  MsgBox('aw-cli installed to:{code} {app}' + #13#10 + #13#10 + 'To add to PATH, run in PowerShell:' + #13#10 +
+         '[Environment]::SetEnvironmentVariable("Path", $env:Path + ";{app}", "User")',
+         mbInformation, MB_OK);
 end;
