@@ -65,17 +65,31 @@ procedure CurStepChanged(CurStep: TSetupStep);
 var
   PathEntry: String;
   CurrentPath: String;
+  RegKey: Integer;
 begin
   if CurStep = ssPostInstall then
   begin
     PathEntry := ExpandConstant('{app}');
 
-    // Append our path to the existing one
-    CurrentPath := GetRegistryStringValue(HKEY_CURRENT_USER, 'Environment', 'Path');
+    // Read current PATH using native Pascal string handling
+    RegKey := 0;
+    CurrentPath := '';
+    if RegOpenKeyEx(HKEY_CURRENT_USER, 'Environment', 0, KEY_READ, RegKey) then
+    begin
+      CurrentPath := StringOfChar(' ', 32768);
+      if RegQueryStringValue(RegKey, 'Path', CurrentPath) then
+      begin
+        // Trim null padding
+        CurrentPath := Trim(CurrentPath);
+      end
+      else
+        CurrentPath := '';
+      RegCloseKey(RegKey);
+    end;
+
     if Pos(PathEntry, CurrentPath) = 0 then
     begin
       RegWriteStringValue(HKEY_CURRENT_USER, 'Environment', 'Path', CurrentPath + ';' + PathEntry);
-      // Notify Windows of the environment change
       SendMessage(HWND_BROADCAST, WM_SETTINGCHANGE, 0, 'Environment');
     end;
   end;
