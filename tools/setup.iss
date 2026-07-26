@@ -19,7 +19,7 @@ AppUpdatesURL={#MyAppURL}
 DefaultDirName={autopf}\{#MyAppName}
 DefaultGroupName={#MyAppName}
 AllowNoIcons=yes
-OutputDir=dist
+OutputDir=..\dist
 OutputBaseFilename=aw-cli-{#MyAppVersion}-Setup
 Compression=lzma2
 SolidCompression=yes
@@ -40,9 +40,9 @@ Name: "quicklaunchicon"; Description: "{cm:CreateQuickLaunchIcon}"; GroupDescrip
 
 [Files]
 ; The standalone EXE
-Source: "dist\aw-cli.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\dist\aw-cli.exe"; DestDir: "{app}"; Flags: ignoreversion
 ; The PowerShell module (src folder as zip)
-Source: "dist\aw-cli-module.zip"; DestDir: "{app}\module"; Flags: ignoreversion
+Source: "..\dist\aw-cli-module.zip"; DestDir: "{app}\module"; Flags: ignoreversion
 
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
