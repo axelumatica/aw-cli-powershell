@@ -111,6 +111,7 @@ if ($providerName -eq 'local' -and $watchHistory.Count -gt 0 -and $provider.PSOb
 }
 
 # ── Main ─────────────────────────────────────────────────────────────────
+try {
 if ($History -and $RemoveHistory) {
     _HandleHistoryRemoval $watchHistory
     return
@@ -140,3 +141,37 @@ _InteractiveSession -Provider $provider -AnimeList $animeList -WatchHistory $wat
 
 Write-Host ""
 Write-Host "Arrivederci!" -ForegroundColor Cyan
+} catch {
+    throw $_
+}
+
+# ── Global error handler for PS2EXE (no console = no output) ──────────────
+$ErrorActionPreference = 'Continue'
+trap {
+    $err = $_
+    $logPath = Join-Path $env:LOCALAPPDATA "aw-cli\error.log"
+    $dir = Split-Path $logPath -Parent
+    if (-not (Test-Path $dir)) { New-Item -ItemType Directory -Path $dir -Force | Out-Null }
+
+    $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+    $msg = @"
+=== aw-cli Error $(Get-Date -Format "yyyy-MM-dd HH:mm:ss") ===
+$_ | $($err.InvocationInfo?.ScriptName):$($err.InvocationInfo?.ScriptLineNumber)
+$($err.StackTrace)
+---
+"@
+    $msg | Out-File -FilePath $logPath -Append -Encoding UTF8
+
+    # Brief popup so user knows something went wrong
+    try {
+        Add-Type -AssemblyName System.Windows.Forms
+        [System.Windows.Forms.MessageBox]::Show(
+            "aw-cli ha riscontrato un errore.`n`nDettagli salvati in:`n$logPath",
+            "Errore aw-cli",
+            [System.Windows.Forms.MessageBoxButtons]::OK,
+            [System.Windows.Forms.MessageBoxIcon]::Error
+        )
+    } catch { }
+
+    exit 1
+}
