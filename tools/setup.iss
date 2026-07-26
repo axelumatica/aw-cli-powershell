@@ -78,7 +78,7 @@ begin
     CurrentPath := RegQueryStringValue(HKCU, 'Environment', 'Path');
     if Pos(PathEntry, CurrentPath) = 0 then
     begin
-      RegWriteExpandStringValue(HKCU, 'Environment', 'Path', CurrentPath + ';' + PathEntry);
+      RegWriteStringValue(HKCU, 'Environment', 'Path', CurrentPath + ';' + PathEntry);
       // Notify Windows of the environment change
       SendMessage(HWND_BROADCAST, WM_SETTINGCHANGE, 0, 'Environment');
     end;
