@@ -217,10 +217,9 @@ function New-FormEncodedBody {
     return ConvertTo-QueryString -Params $Fields
 }
 
- try {
-     Export-ModuleMember -Function @(
+ Export-ModuleMember -Function @(
          'New-AwSession', 'Add-SessionCookie', 'Get-SessionCookies', 'Clear-SessionCookies',
          'Invoke-AwRequest', 'Get-AwHtml', 'Invoke-AwJsonRequest', 'Invoke-AwDownload',
          'ConvertTo-QueryString', 'New-FormEncodedBody'
      )
- } catch { }
+ 

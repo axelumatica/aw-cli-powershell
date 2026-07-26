@@ -187,6 +187,5 @@ class Anime {
     }
 }
 
- try {
-     Export-ModuleMember -Class 'Anime'
- } catch { }
+ Export-ModuleMember -Class 'Anime'
+ 

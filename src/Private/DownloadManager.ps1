@@ -76,6 +76,5 @@ function Save-AnimeDownload {
     Write-OutputColor "Download completato: $completed.OK, $failed falliti" -Style info
 }
 
- try {
-     Export-ModuleMember -Function 'Save-AnimeDownload'
- } catch { }
+ Export-ModuleMember -Function 'Save-AnimeDownload'
+ 

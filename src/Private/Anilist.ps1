@@ -102,10 +102,9 @@ function Get-AnimeAniListRating {
     return 0
 }
 
- try {
-     Export-ModuleMember -Function @(
+ Export-ModuleMember -Function @(
          'Update-AniListEntry',
          'Get-AniListUserId',
          'Get-AnimeAniListRating'
      )
- } catch { }
+ 

@@ -128,7 +128,13 @@ function Get-UnixTimestamp {
 # ── Registry helpers ──────────────────────────────────────────────────────
 
 function Get-OsName {
-    if (-not $IsWindows) {
+    $isWin = $true
+    if (Test-Path 'env:IsWindows') { $isWin = $env:IsWindows -eq 'true' }
+    elseif (Test-Path 'env:PSModulePath') {
+        # Windows usually has PSModulePath set by default
+        $isWin = $true
+    }
+    if (-not $isWin) {
         $uname = uname -a 2>$null
         if ($LASTEXITCODE -ne 0 -or -not $uname) { return "Windows" }
         $parts = $uname -split '\s+'
@@ -140,12 +146,10 @@ function Get-OsName {
     return "Windows"
 }
 
- try {
-     Export-ModuleMember -Function @(
-         'Write-OutputColor', 'Clear-Screen',
-         'Get-EncodingFromBom', 'Read-FileContent', 'Write-FileUtf8',
-         'Test-LikeAny', 'Get-NormalizedPath', 'Remove-InvalidFileNameChars',
-         'Get-NumericValue', 'ConvertTo-MultiValue',
-         'Get-UnixTimestamp', 'Get-OsName'
-     )
- } catch { }
+Export-ModuleMember -Function @(
+    'Write-OutputColor', 'Clear-Screen',
+    'Get-EncodingFromBom', 'Read-FileContent', 'Write-FileUtf8',
+    'Test-LikeAny', 'Get-NormalizedPath', 'Remove-InvalidFileNameChars',
+    'Get-NumericValue', 'ConvertTo-MultiValue',
+    'Get-UnixTimestamp', 'Get-OsName'
+)

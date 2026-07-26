@@ -187,6 +187,4 @@ function Show-ListPrompt {
     return $Options[$idx]
 }
 
- try {
-     Export-ModuleMember -Function 'Show-Menu', 'Show-YesNoPrompt', 'Show-ListPrompt'
- } catch { }
+ Export-ModuleMember -Function 'Show-Menu', 'Show-YesNoPrompt', 'Show-ListPrompt'

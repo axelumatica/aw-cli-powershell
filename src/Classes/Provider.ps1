@@ -149,6 +149,5 @@ function New-Provider {
     }
 }
 
- try {
-     Export-ModuleMember -Function 'New-Provider'
- } catch { }
+ Export-ModuleMember -Function 'New-Provider'
+ 

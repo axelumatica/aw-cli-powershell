@@ -156,10 +156,9 @@ function Clear-ConsoleScreen {
 # Load on import
 Import-Config
 
- try {
-     Export-ModuleMember -Function @(
+ Export-ModuleMember -Function @(
          'Get-ConfigPath', 'Get-ConfigValue', 'Set-ConfigValue',
          'Import-Config', 'Export-Config', 'Initialize-Config',
          'Write-OutputColor', 'Clear-ConsoleScreen'
      )
- } catch { }
+ 

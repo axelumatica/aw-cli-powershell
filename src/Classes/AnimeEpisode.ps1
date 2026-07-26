@@ -108,6 +108,5 @@ class AnimeEpisode {
     }
 }
 
- try {
-     Export-ModuleMember -Class 'AnimeEpisode'
- } catch { }
+ Export-ModuleMember -Class 'AnimeEpisode'
+ 

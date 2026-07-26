@@ -210,6 +210,5 @@ function _LaunchUwp {
     return @{ Completed = $true; Progress = $Resume }
 }
 
- try {
-     Export-ModuleMember -Function 'Find-AvailablePlayers', 'Get-DetectedPlayer', 'Invoke-MediaPlayer'
- } catch { }
+ Export-ModuleMember -Function 'Find-AvailablePlayers', 'Get-DetectedPlayer', 'Invoke-MediaPlayer'
+ 

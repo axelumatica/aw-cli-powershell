@@ -9,9 +9,7 @@
         Version="$(var.Version)"
         Manufacturer="aw-cli Contributors"
         UpgradeCode="E8A1C2D3-4F5B-6A7C-8D9E-0F1A2B3C4D5E"
-        InstallerVersion="500"
-        InstallScope="perUser"
-        InstallPrivileges="limited">
+        InstallerVersion="500">
 
         <MajorUpgrade Schedule="afterInstallInitialize" DowngradeErrorMessage="Una versione piu recente e gia installata." />
         <MediaTemplate EmbedCab="yes" />

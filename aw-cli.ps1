@@ -191,6 +191,8 @@ $ErrorActionPreference = 'Continue'
 trap {
     $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
     $stack = if ($_.ScriptStackTrace) { "`nStack: $($_.ScriptStackTrace)" } else { "" }
-    Write-AwErrorLog "FATAL: $($_) | Line: $($_.InvocationInfo?.ScriptLineNumber) | File: $($_.InvocationInfo?.ScriptName)$stack"
+    $lineNum = if ($_.InvocationInfo -and $_.InvocationInfo.ScriptLineNumber) { $_.InvocationInfo.ScriptLineNumber } else { "?" }
+    $fileName = if ($_.InvocationInfo -and $_.InvocationInfo.ScriptName) { $_.InvocationInfo.ScriptName } else { "?" }
+    Write-AwErrorLog "FATAL: $($_) | Line: $lineNum | File: $fileName$stack"
     Show-AwFatalError $_
 }

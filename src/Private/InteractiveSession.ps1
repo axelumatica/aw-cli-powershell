@@ -345,6 +345,5 @@ function _HandleHistoryRemoval {
     }
 }
 
- try {
-     Export-ModuleMember -Function @()
- } catch { }
+ Export-ModuleMember -Function @()
+ 

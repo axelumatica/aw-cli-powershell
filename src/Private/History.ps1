@@ -98,9 +98,8 @@ function Get-OngoingAnimeCount {
     return $count
 }
 
- try {
-     Export-ModuleMember -Function @(
+ Export-ModuleMember -Function @(
          'Get-HistoryPath', 'Import-History', 'Export-History',
          'Update-AnimeHistory', 'Remove-FromHistory', 'Get-OngoingAnimeCount'
      )
- } catch { }
+ 

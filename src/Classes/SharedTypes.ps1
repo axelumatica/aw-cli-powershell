@@ -101,13 +101,11 @@ function Get-SafeFileName {
     return $s.Trim()
 }
 
- try {
-     Export-ModuleMember -Function @(
-         'Get-AnimeStatusName',
-         'Get-DownloadStatusName',
-         'Get-AniListStatusName',
-         'ConvertFrom-AnimeStatusString',
-         'ConvertTo-Hashtable',
-         'Get-SafeFileName'
-     )
- } catch { }
+ Export-ModuleMember -Function @(
+    'Get-AnimeStatusName',
+    'Get-DownloadStatusName',
+    'Get-AniListStatusName',
+    'ConvertFrom-AnimeStatusString',
+    'ConvertTo-Hashtable',
+    'Get-SafeFileName'
+)

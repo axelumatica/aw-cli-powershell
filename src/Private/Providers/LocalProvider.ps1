@@ -136,6 +136,5 @@ function Get-DownloadPath {
     return Join-Path $env:USERPROFILE "Videos\Anime"
 }
 
- try {
-     Export-ModuleMember -Function 'Get-DownloadPath'
- } catch { }
+ Export-ModuleMember -Function 'Get-DownloadPath'
+ 

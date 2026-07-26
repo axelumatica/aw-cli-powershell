@@ -120,6 +120,20 @@ Invoke-PS2EXE @params  # No -NoConsole flag
 - **Artifacts**: `aw-cli.exe`, module `.zip`
 - **Release**: `softprops/action-gh-release@v2` with multi-line `files:` YAML
 
+## Debug Notes (v1.0.2+)
+
+### PS 5.1 Compatibility Fixes
+- **?. operator**: Not supported in PS 5.1 → replaced with null checks
+- **try/catch blocks**: Malformed `try { Export-ModuleMember } catch { }` → removed wrapper
+- **$IsWindows**: Doesn't exist in PS 5.1 → replaced with env check
+- **WiX v5**: Removed `InstallScope`/`InstallPrivileges` from Package element
+
+### Files Fixed: 12 files in src/ including Anime.ps1, Provider.ps1, etc.
+
+### Error Logging
+- Log file: `%LOCALAPPDATA%\aw-cli\error.log`
+- Popup on crash for EXE builds
+
 ## TODO: What's Next
 
 - **Phase 5**: COMPLETE — release.yml CI/CD pipeline + tools/setup.iss (Inno Setup)
