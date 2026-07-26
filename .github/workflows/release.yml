@@ -70,16 +70,13 @@ jobs:
         shell: powershell
         timeout-minutes: 10
         run: |
-          # Use Windows PowerShell 5.1 (NOT pwsh) for PS2EXE
-          powershell -ExecutionPolicy Bypass -Version 5.1 -Command "& {
-            Write-Host 'Compiling with Windows PowerShell 5.1...'
-            & '.\tools\build.ps1' -Version '${{ needs.metadata.outputs.version }}' -Verbose
-            if (-not (Test-Path 'dist\aw-cli.exe')) {
-              Write-Error 'EXE build failed - file not found'
-              exit 1
-            }
-            Write-Host 'Build successful!'
-          }"
+          Write-Host 'Compiling with Windows PowerShell 5.1...'
+          .\tools\build.ps1 -Version '${{ needs.metadata.outputs.version }}' -Verbose
+          if (-not (Test-Path 'dist\aw-cli.exe')) {
+            Write-Error 'EXE build failed - file not found'
+            exit 1
+          }
+          Write-Host 'Build successful!'
 
       - name: Verify build artifacts
         shell: pwsh
