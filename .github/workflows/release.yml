@@ -155,7 +155,7 @@ jobs:
           path: dist/aw-cli-Setup.exe
           retention-days: 30
 
-  # ── MSI via PSMSI (optional — skips gracefully if unavailable) ──────────
+  # ── MSI via WiX v5 ──────────────────────────────────────────────────────
   msi:
     needs: [metadata, build]
     runs-on: windows-latest
@@ -175,38 +175,42 @@ jobs:
           name: aw-cli-module
           path: dist
 
-      - name: Download manifest
-        uses: actions/download-artifact@v4
-        with:
-          name: aw-cli-setup-iss
-          path: tools
-
-      - name: Try PSMSI build
-        shell: powershell
-        run: |
-          # PSMSI requires admin rights on self-hosted; skip on GitHub-hosted runners
-          # See: https://github.com/rmilbrandt/PSMSI
-          Write-Host "PSMSI build skipped on GitHub-hosted runner (requires admin rights)."
-          Write-Host "Use a self-hosted runner if MSI generation is needed."
-
-      - name: Ensure artifact exists (placeholder)
+      - name: Install WiX v5
         shell: pwsh
         run: |
-          # Create a placeholder so the release step always has something to upload
-          Set-Content "dist/aw-cli-msi-not-built.txt" `
-            "MSI was not generated on this GitHub-hosted runner. Build locally with admin rights and PSMSI."
-          Write-Host "Created MSI placeholder note."
+          dotnet tool install --global wix --version 5.0.0 2>$null || true
+          Write-Host "WiX installed"
 
-      - name: Upload MSI placeholder artifact
+      - name: Build MSI
+        shell: pwsh
+        env:
+          VERSION: ${{ needs.metadata.outputs.version }}
+        run: |
+          # Add dotnet tools to PATH
+          $env:PATH = "$env:PATH;C:\Users\runneradmin\.dotnet\tools;C:\Users\runneradmin\AppData\Local\.dotnet\tools"
+          .\tools\build-msi.ps1 -Version "$env:VERSION" -Verbose
+
+      - name: Verify MSI exists
+        shell: pwsh
+        run: |
+          if (Test-Path "dist/aw-cli.msi") {
+            $size = [math]::Round((Get-Item "dist/aw-cli.msi").Length / 1MB, 2)
+            Write-Host "MSI: $size MB"
+          } else {
+            Write-Error "MSI build failed"
+            exit 1
+          }
+
+      - name: Upload MSI artifact
         uses: actions/upload-artifact@v4
         with:
           name: aw-cli-msi
-          path: dist/aw-cli-msi-not-built.txt
+          path: dist/aw-cli.msi
           retention-days: 30
 
   # ── Publish GitHub Release ─────────────────────────────────────────────
   release:
-    needs: [metadata, build, inno-setup]
+    needs: [metadata, build, inno-setup, msi]
     runs-on: ubuntu-latest
     steps:
       - name: Download all artifacts
@@ -235,4 +239,4 @@ jobs:
             artifacts/aw-cli.exe
             artifacts/aw-cli-module.zip
             artifacts/aw-cli-Setup.exe
-            artifacts/aw-cli-msi-not-built.txt
+            artifacts/aw-cli.msi

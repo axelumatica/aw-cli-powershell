@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+    <!--
+        aw-cli MSI Installer
+        Build: wix build tools/aw-cli.wxs -d Version=1.0.0 -d ExePath=dist/aw-cli.exe -d ModuleZipPath=dist/aw-cli-module.zip -o dist/aw-cli.msi
+    -->
+    <Package
+        Name="aw-cli"
+        Version="$(var.Version)"
+        Manufacturer="aw-cli Contributors"
+        UpgradeCode="E8A1C2D3-4F5B-6A7C-8D9E-0F1A2B3C4D5E"
+        InstallerVersion="500"
+        InstallScope="perUser"
+        InstallPrivileges="limited">
+
+        <MajorUpgrade Schedule="afterInstallInitialize" DowngradeErrorMessage="Una versione piu recente e gia installata." />
+        <MediaTemplate EmbedCab="yes" />
+
+        <!-- Per-user install: %LOCALAPPDATA%\aw-cli -->
+        <StandardDirectory Id="LocalAppDataFolder" CreateFolder="yes">
+            <Directory Id="INSTALLFOLDER" Name="aw-cli">
+                <!-- Main executable with PATH registration -->
+                <Component Guid="*">
+                    <File Id="aw_cli_exe" Source="$(var.ExePath)" KeyPath="yes" />
+                    <Environment Id="PATH_ENTRY" Name="PATH" Value="[INSTALLFOLDER]"
+                        Action="append" Part="last" System="no" Permanent="no" />
+                </Component>
+                <!-- PowerShell module zip -->
+                <Component Guid="*">
+                    <File Id="aw_cli_module" Source="$(var.ModuleZipPath)" />
+                </Component>
+            </Directory>
+        </StandardDirectory>
+
+        <!-- Add/Remove Programs entry -->
+        <ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER" />
+    </Package>
+</Wix>
