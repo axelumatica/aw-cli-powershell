@@ -1,0 +1,24 @@
+{
+  "syncplay": {},
+  "player": {
+    "path": "mpv",
+    "type": "mpv"
+  },
+  "anilist": {},
+  "general": {
+    "specials": false,
+    "parallel-downloads": 3
+  },
+  "provider": {
+    "source": "animeworld"
+  },
+  "style": {
+    "info": "yellow",
+    "prompt": "cyan",
+    "highlight": "cyan",
+    "general": "white",
+    "warning": "yellow",
+    "success": "green",
+    "error": "red"
+  }
+}

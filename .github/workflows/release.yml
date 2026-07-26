@@ -1,0 +1,241 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  # ── Parse version from tag ───────────────────────────────────────────────
+  metadata:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.parse.outputs.version }}
+    steps:
+      - name: Parse tag
+        id: parse
+        run: |
+          TAG="${GITHUB_REF#refs/tags/}"
+          TAG="${TAG#v}"
+          echo "version=$TAG" >> "$GITHUB_OUTPUT"
+          echo "Tag: $TAG"
+
+  # ── Build (Windows) ────────────────────────────────────────────────────
+  build:
+    needs: metadata
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set version
+        shell: pwsh
+        run: |
+          $version = '${{ needs.metadata.outputs.version }}'
+          Write-Host "Building version: $version"
+
+      # Update module manifest version before building
+      - name: Update ModuleVersion in manifest
+        shell: pwsh
+        run: |
+          $version = '${{ needs.metadata.outputs.version }}'
+          $manifest = Get-Content "src/aw-cli.psd1" -Raw
+          $updated = $manifest -replace "(?<=ModuleVersion\s*=\s*)'[^']+'", "'$version'"
+          Set-Content "src/aw-cli.psd1" -Value $updated -NoNewline
+          Write-Host "Updated aw-cli.psd1 to version $version"
+
+          # Also update the version string in build.ps1 defaults
+          $build = Get-Content "tools/build.ps1" -Raw
+          if ($build -match '\$Version\s*=\s*"?[\d.]+"?') {
+            $build = $build -replace '\$Version\s*=\s*"?[\d.]+"?', "`$Version = '$version'"
+            Set-Content "tools/build.ps1" -Value $build -NoNewline
+            Write-Host "Updated tools/build.ps1 version reference"
+          }
+
+      # Write setup.iss version tokens
+      - name: Substitute version in Inno Setup script
+        shell: pwsh
+        run: |
+          $version = '${{ needs.metadata.outputs.version }}'
+          $iss = Get-Content "tools/setup.iss" -Raw
+          $iss = $iss -replace '@VERSION@', $version
+          Set-Content "tools/setup.iss" -Value $iss -NoNewline
+          Write-Host "Substituted version $version in setup.iss"
+
+      - name: Build with PS2EXE
+        shell: powershell
+        timeout-minutes: 10
+        run: |
+          # Use Windows PowerShell 5.1 (NOT pwsh) for PS2EXE
+          powershell -ExecutionPolicy Bypass -Version 5.1 -Command "& {
+            Write-Host 'Compiling with Windows PowerShell 5.1...'
+            & '.\tools\build.ps1' -Version '${{ needs.metadata.outputs.version }}' -Verbose
+            if (-not (Test-Path 'dist\aw-cli.exe')) {
+              Write-Error 'EXE build failed - file not found'
+              exit 1
+            }
+            Write-Host 'Build successful!'
+          }"
+
+      - name: Verify build artifacts
+        shell: pwsh
+        run: |
+          $exe = 'dist/aw-cli.exe'
+          $zip = 'dist/aw-cli-module.zip'
+          if (Test-Path $exe) {
+            $size = [math]::Round((Get-Item $exe).Length / 1MB, 2)
+            Write-Host "EXE: $size MB"
+          } else {
+            Write-Error "Missing: $exe"
+            exit 1
+          }
+          if (Test-Path $zip) {
+            $size = [math]::Round((Get-Item $zip).Length / 1MB, 2)
+            Write-Host "Module ZIP: $size MB"
+          }
+
+      - name: Upload EXE artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: aw-cli-exe
+          path: dist/aw-cli.exe
+          retention-days: 30
+
+      - name: Upload module ZIP artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: aw-cli-module
+          path: dist/aw-cli-module.zip
+          retention-days: 30
+
+      - name: Upload setup.iss artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: aw-cli-setup-iss
+          path: tools/setup.iss
+          retention-days: 30
+
+  # ── Inno Setup installer (separate job for tool isolation) ──────────────
+  inno-setup:
+    needs: [metadata, build]
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download EXE artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: aw-cli-exe
+          path: dist
+
+      - name: Download module ZIP artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: aw-cli-module
+          path: dist
+
+      - name: Download setup.iss
+        uses: actions/download-artifact@v4
+        with:
+          name: aw-cli-setup-iss
+          path: tools
+
+      - name: Compile Inno Setup installer
+        id: inno
+        uses: Minionguyjpro/Inno-Setup-Action@v1.2.2
+        with:
+          path: tools/setup.iss
+
+      - name: Upload installer artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: aw-cli-installer
+          path: dist/aw-cli-Setup.exe
+          retention-days: 30
+
+  # ── MSI via PSMSI (optional — skips gracefully if unavailable) ──────────
+  msi:
+    needs: [metadata, build]
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download EXE artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: aw-cli-exe
+          path: dist
+
+      - name: Download module ZIP artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: aw-cli-module
+          path: dist
+
+      - name: Download manifest
+        uses: actions/download-artifact@v4
+        with:
+          name: aw-cli-setup-iss
+          path: tools
+
+      - name: Try PSMSI build
+        shell: powershell
+        run: |
+          # PSMSI requires admin rights on self-hosted; skip on GitHub-hosted runners
+          # See: https://github.com/rmilbrandt/PSMSI
+          Write-Host "PSMSI build skipped on GitHub-hosted runner (requires admin rights)."
+          Write-Host "Use a self-hosted runner if MSI generation is needed."
+
+      - name: Ensure artifact exists (placeholder)
+        shell: pwsh
+        run: |
+          # Create a placeholder so the release step always has something to upload
+          Set-Content "dist/aw-cli-msi-not-built.txt" `
+            "MSI was not generated on this GitHub-hosted runner. Build locally with admin rights and PSMSI."
+          Write-Host "Created MSI placeholder note."
+
+      - name: Upload MSI placeholder artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: aw-cli-msi
+          path: dist/aw-cli-msi-not-built.txt
+          retention-days: 30
+
+  # ── Publish GitHub Release ─────────────────────────────────────────────
+  release:
+    needs: [metadata, build, inno-setup]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: List artifacts
+        shell: pwsh
+        run: |
+          Get-ChildItem artifacts | ForEach-Object {
+            $size = [math]::Round($_.Length / 1MB, 2)
+            Write-Host "  $($_.Name) ($size MB)"
+          }
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.metadata.outputs.version }}
+          name: aw-cli v${{ needs.metadata.outputs.version }}
+          generate_release_notes: true
+          draft: false
+          prerelease: ${{ contains(needs.metadata.outputs.version, 'alpha') || contains(needs.metadata.outputs.version, 'beta') || contains(needs.metadata.outputs.version, 'rc') }}
+          files: |
+            artifacts/aw-cli.exe
+            artifacts/aw-cli-module.zip
+            artifacts/aw-cli-Setup.exe
+            artifacts/aw-cli-msi-not-built.txt

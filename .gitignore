@@ -1,0 +1,18 @@
+@"
+# PowerShell
+*.psc
+*.bak
+tools/dist/
+tools/temp/
+*.exe
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+"@ | Set-Content -Path .\.gitignore   
