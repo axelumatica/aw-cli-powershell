@@ -88,8 +88,6 @@ $global:EventHandler = {
     param($sender, $event)
     Show-AwFatalError $event.Exception.Message
 }
-$host.UI.PromptForChoice = $host.UI.PromptForChoice  # ensure UI available
-
 function Import-Aw($rel) {
     $p = Join-Path $script:RootPath $rel
     if (-not (Test-Path $p)) {
