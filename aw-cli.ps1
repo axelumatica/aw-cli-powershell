@@ -59,7 +59,48 @@ $ErrorActionPreference = 'Stop'
 if (-not $PSScriptRoot) { $PSScriptRoot = Split-Path $PSCommandPath -Parent }
 $script:RootPath = Split-Path $PSScriptRoot -Parent
 
-function Import-Aw($rel) { $p = Join-Path $script:RootPath $rel; if (Test-Path $p) { . $p } }
+# Error log helper (called from anywhere)
+function Write-AwErrorLog {
+    param($Message)
+    $logDir = Join-Path $env:LOCALAPPDATA 'aw-cli'
+    if (-not (Test-Path $logDir)) { New-Item -ItemType Directory -Path $logDir -Force | Out-Null }
+    $logFile = Join-Path $logDir 'error.log'
+    $entry = "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - $Message`n"
+    $entry | Out-File -FilePath $logFile -Append -Encoding UTF8
+}
+
+# Show error to user and die (for early crashes before main error handler)
+function Show-AwFatalError {
+    param($ErrorRecord)
+    $msg = "aw-cli ha riscontrato un errore.`n`n$ErrorRecord`n`nLog: $env:LOCALAPPDATA\aw-cli\error.log"
+    Write-AwErrorLog $ErrorRecord
+    try {
+        Add-Type -AssemblyName System.Windows.Forms
+        [System.Windows.Forms.MessageBox]::Show($msg, "Errore aw-cli", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Error)
+    } catch {
+        Write-Host $msg -ForegroundColor Red
+    }
+    exit 1
+}
+
+# Global handler for uncaught errors
+$global:EventHandler = {
+    param($sender, $event)
+    Show-AwFatalError $event.Exception.Message
+}
+$host.UI.PromptForChoice = $host.UI.PromptForChoice  # ensure UI available
+
+function Import-Aw($rel) {
+    $p = Join-Path $script:RootPath $rel
+    if (-not (Test-Path $p)) {
+        Show-AwFatalError "File non trovato: $p`nVerifica l'installazione di aw-cli."
+    }
+    try {
+        . $p
+    } catch {
+        Show-AwFatalError "Errore nel caricamento $p : $_"
+    }
+}
 
 # Load all layers
 Import-Aw 'src\Classes\SharedTypes.ps1'
@@ -145,33 +186,11 @@ Write-Host "Arrivederci!" -ForegroundColor Cyan
     throw $_
 }
 
-# ── Global error handler for PS2EXE (no console = no output) ──────────────
+# ── Global error handler (for PS2EXE compiled EXE) ───────────────────────
 $ErrorActionPreference = 'Continue'
 trap {
-    $err = $_
-    $logPath = Join-Path $env:LOCALAPPDATA "aw-cli\error.log"
-    $dir = Split-Path $logPath -Parent
-    if (-not (Test-Path $dir)) { New-Item -ItemType Directory -Path $dir -Force | Out-Null }
-
     $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-    $msg = @"
-=== aw-cli Error $(Get-Date -Format "yyyy-MM-dd HH:mm:ss") ===
-$_ | $($err.InvocationInfo?.ScriptName):$($err.InvocationInfo?.ScriptLineNumber)
-$($err.StackTrace)
----
-"@
-    $msg | Out-File -FilePath $logPath -Append -Encoding UTF8
-
-    # Brief popup so user knows something went wrong
-    try {
-        Add-Type -AssemblyName System.Windows.Forms
-        [System.Windows.Forms.MessageBox]::Show(
-            "aw-cli ha riscontrato un errore.`n`nDettagli salvati in:`n$logPath",
-            "Errore aw-cli",
-            [System.Windows.Forms.MessageBoxButtons]::OK,
-            [System.Windows.Forms.MessageBoxIcon]::Error
-        )
-    } catch { }
-
-    exit 1
+    $stack = if ($_.ScriptStackTrace) { "`nStack: $($_.ScriptStackTrace)" } else { "" }
+    Write-AwErrorLog "FATAL: $($_) | Line: $($_.InvocationInfo?.ScriptLineNumber) | File: $($_.InvocationInfo?.ScriptName)$stack"
+    Show-AwFatalError $_
 }
