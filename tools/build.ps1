@@ -15,6 +15,8 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $rootDir = if ($PSScriptRoot) { $PSScriptRoot } else { Split-Path $MyInvocation.MyCommand.Path -Parent }
+# When called as .\tools\build.ps1, PS_scriptRoot = tools\. Resolve to repo root:
+$rootDir = Split-Path $rootDir -Parent
 if (-not $rootDir) { $rootDir = $PSCmdlet.SessionState.Path.GetUnresolvedProviderPathFromPSPath('.\') }
 $srcDir = Join-Path $rootDir "src"
 $distDir = Join-Path $rootDir "dist"
