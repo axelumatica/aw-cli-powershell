@@ -70,15 +70,11 @@ begin
   begin
     PathEntry := ExpandConstant('{app}');
 
-    // Ensure Path key exists
-    if not RegValueExists(HKCU, 'Environment', 'Path') then
-      RegWriteStringValue(HKCU, 'Environment', 'Path', '');
-
     // Append our path to the existing one
-    CurrentPath := RegQueryStringValue(HKCU, 'Environment', 'Path');
+    CurrentPath := GetRegistryStringValue(HKEY_CURRENT_USER, 'Environment', 'Path');
     if Pos(PathEntry, CurrentPath) = 0 then
     begin
-      RegWriteStringValue(HKCU, 'Environment', 'Path', CurrentPath + ';' + PathEntry);
+      RegWriteStringValue(HKEY_CURRENT_USER, 'Environment', 'Path', CurrentPath + ';' + PathEntry);
       // Notify Windows of the environment change
       SendMessage(HWND_BROADCAST, WM_SETTINGCHANGE, 0, 'Environment');
     end;
