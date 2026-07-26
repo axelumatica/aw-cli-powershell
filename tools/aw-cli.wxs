@@ -15,13 +15,13 @@
         <MediaTemplate EmbedCab="yes" />
 
         <!-- Per-user install: %LOCALAPPDATA%\aw-cli -->
-        <StandardDirectory Id="LocalAppDataFolder" CreateFolder="yes">
+        <StandardDirectory Id="LocalAppDataFolder">
             <Directory Id="INSTALLFOLDER" Name="aw-cli">
                 <!-- Main executable with PATH registration -->
                 <Component Guid="*">
                     <File Id="aw_cli_exe" Source="$(var.ExePath)" KeyPath="yes" />
-                    <Environment Id="PATH_ENTRY" Name="PATH" Value="[INSTALLFOLDER]"
-                        Action="append" Part="last" System="no" Permanent="no" />
+                    <Environment Id="PATH_ENTRY" Name="Path" Value="[INSTALLFOLDER]"
+                        Action="create" System="no" />
                 </Component>
                 <!-- PowerShell module zip -->
                 <Component Guid="*">
